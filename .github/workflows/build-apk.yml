@@ -6,11 +6,18 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - name: Tìm thư mục dự án
+        id: proj
+        run: |
+          if [ -f settings.gradle.kts ]; then echo "dir=." >> "$GITHUB_OUTPUT"
+          elif [ -f DaoVi/settings.gradle.kts ]; then echo "dir=DaoVi" >> "$GITHUB_OUTPUT"
+          else echo "::error::Không thấy settings.gradle.kts, hãy kiểm tra đã tải đủ file chưa"; ls -la; exit 1; fi
+
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -22,9 +29,10 @@ jobs:
           gradle-version: "8.7"
 
       - name: Build debug APK
+        working-directory: ${{ steps.proj.outputs.dir }}
         run: gradle :app:assembleDebug --no-daemon --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: DaoVi-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: "**/app/build/outputs/apk/debug/app-debug.apk"
